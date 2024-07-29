@@ -2496,7 +2496,50 @@ const cpu_family_t cpu_families[] = {
             { .name = "", 0 }
         }
     },
-    { /*OEM versions are 3.3V, Retail versions are 3.3V with a 5V regulator for installation in older boards. They are functionally identical*/
+    { /*DX4 OverDrive. 3.3V with 5V regulator and locked to 3x multiplier.*/
+        .package       = CPU_PKG_SOCKET1 | CPU_PKG_SOCKET3_PC330,
+        .manufacturer  = "Intel",
+        .name          = "iDX4 OverDrive",
+        .internal_name = "idx4_od",
+        .cpus          = (const CPU[]) {
+            {
+                .name               = "75",
+                .cpu_type           = CPU_i486DX_SLENH,
+                .fpus               = fpus_internal,
+                .rspeed             = 75000000,
+                .multi              = 3.0,
+                .voltage            = 5000,
+                .edx_reset          = 0x480,
+                .cpuid_model        = 0x480,
+                .cyrix_id           = 0x0000,
+                .cpu_flags          = CPU_SUPPORTS_DYNAREC | CPU_FIXED_MULTIPLIER,
+                .mem_read_cycles    = 12,
+                .mem_write_cycles   = 12,
+                .cache_read_cycles  = 9,
+                .cache_write_cycles = 9,
+                .atclk_div          = 9
+            },
+            {
+                .name               = "100",
+                .cpu_type           = CPU_i486DX_SLENH,
+                .fpus               = fpus_internal,
+                .rspeed             = 100000000,
+                .multi              = 3.0,
+                .voltage            = 5000,
+                .edx_reset          = 0x480,
+                .cpuid_model        = 0x480,
+                .cyrix_id           = 0x0000,
+                .cpu_flags          = CPU_SUPPORTS_DYNAREC | CPU_FIXED_MULTIPLIER,
+                .mem_read_cycles    = 18,
+                .mem_write_cycles   = 18,
+                .cache_read_cycles  = 9,
+                .cache_write_cycles = 9,
+                .atclk_div          = 12
+            },
+            { .name = "", 0 }
+        }
+    },	
+    { /*DX4 tray version. 3.3V only.*/
         .package       = CPU_PKG_SOCKET1 | CPU_PKG_SOCKET3_PC330,
         .manufacturer  = "Intel",
         .name          = "iDX4",
@@ -2509,8 +2552,8 @@ const cpu_family_t cpu_families[] = {
                 .rspeed             = 75000000,
                 .multi              = 3.0,
                 .voltage            = 3300,
-                .edx_reset          = 0x480,
-                .cpuid_model        = 0x480,
+                .edx_reset          = 0x483,
+                .cpuid_model        = 0x483,
                 .cyrix_id           = 0x0000,
                 .cpu_flags          = CPU_SUPPORTS_DYNAREC,
                 .mem_read_cycles    = 12,
@@ -2520,7 +2563,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 9
             },
             {
-                .name               = "100",
+                .name               = "100/33",
                 .cpu_type           = CPU_i486DX_SLENH,
                 .fpus               = fpus_internal,
                 .rspeed             = 100000000,
@@ -2536,6 +2579,23 @@ const cpu_family_t cpu_families[] = {
                 .cache_write_cycles = 9,
                 .atclk_div          = 12
             },
+            {
+                .name               = "100/50",
+                .cpu_type           = CPU_i486DX_SLENH,
+                .fpus               = fpus_internal,
+                .rspeed             = 100000000,
+                .multi              = 2.0,
+                .voltage            = 3300,
+                .edx_reset          = 0x483,
+                .cpuid_model        = 0x483,
+                .cyrix_id           = 0x0000,
+                .cpu_flags          = CPU_SUPPORTS_DYNAREC,
+                .mem_read_cycles    = 18,
+                .mem_write_cycles   = 18,
+                .cache_read_cycles  = 9,
+                .cache_write_cycles = 9,
+                .atclk_div          = 12
+            },			
             { .name = "", 0 }
         }
     },
