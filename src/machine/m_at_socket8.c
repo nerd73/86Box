@@ -224,52 +224,61 @@ machine_at_lgibmx61_init(const machine_t *model)
 
     return ret;
 }
+static const device_config_t vs440fx_config[] = {
+    // clang-format off
+    {
+        .name = "bios",
+        .description = "BIOS Version",
+        .type = CONFIG_BIOS,
+        .default_string = "intel_10006dk0",
+        .default_int = 0,
+        .file_filter = "",
+        .spinner = { 0 },
+        .bios = {			  
+            { .name = "Intel (1.00.18.CS1)", .internal_name = "intel_10018cs1", .bios_type = BIOS_NORMAL, 
+              .files_no = 5, .local = 0, .size = 262144, .files = { "roms/machines/vs440fx/1018CS1_.BIO", "roms/machines/vs440fx/1018CS1_.BI1", 
+			  "roms/machines/vs440fx/1018CS1_.BI2", "roms/machines/vs440fx/1018CS1_.BI3", "roms/machines/vs440fx/1018CS1_.RCV", "" } },
+            { .name = "Gateway 2000 (1.00.11.CS1T)", .internal_name = "gw2k_10011cs1t", .bios_type = BIOS_NORMAL, 
+              .files_no = 5, .local = 0, .size = 262144, .files = { "roms/machines/gw2kvenus/1011CS1T.BIO", "roms/machines/gw2kvenus/1011CS1T.BI1", 
+			  "roms/machines/gw2kvenus/1011CS1T.BI2", "roms/machines/gw2kvenus/1011CS1T.BI3", "roms/machines/gw2kvenus/1011CS1T.RCV", "" } },			  
+            { .files_no = 0 }
+        },
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+const device_t vs440fx_device = {
+    .name          = "Intel VS440FX Devices",
+    .internal_name = "vs440fx_device",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = vs440fx_config
+};
 
 int
 machine_at_vs440fx_init(const machine_t *model)
 {
-    int ret;
+    int         ret = 0;
+    const char *fn[5];
 
-    ret = bios_load_linear_combined2("roms/machines/vs440fx/1018CS1_.BIO",
-                                     "roms/machines/vs440fx/1018CS1_.BI1",
-                                     "roms/machines/vs440fx/1018CS1_.BI2",
-                                     "roms/machines/vs440fx/1018CS1_.BI3",
-                                     "roms/machines/vs440fx/1018CS1_.RCV",
-                                     0x3a000, 128);
-
-    if (bios_only || !ret)
+    /* No ROMs available. */
+    if (!device_available(model->device))
         return ret;
 
-    machine_at_common_init(model);
-
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x0B, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x0F, PCI_CARD_NORMAL,      4, 1, 2, 3);
-    pci_register_slot(0x11, PCI_CARD_NORMAL,      3, 4, 1, 2);
-    pci_register_slot(0x13, PCI_CARD_NORMAL,      2, 3, 4, 1);
-    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0);
-    device_add(&i440fx_device);
-    device_add(&piix3_device);
-    device_add(&keyboard_ps2_intel_ami_pci_device);
-    device_add(&pc87307_device);
-
-    device_add(&intel_flash_bxt_ami_device);
-
-    return ret;
-}
-
-int
-machine_at_gw2kvenus_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear_combined2("roms/machines/gw2kvenus/1011CS1T.BIO",
-                                     "roms/machines/gw2kvenus/1011CS1T.BI1",
-                                     "roms/machines/gw2kvenus/1011CS1T.BI2",
-                                     "roms/machines/gw2kvenus/1011CS1T.BI3",
-                                     "roms/machines/gw2kvenus/1011CS1T.RCV",
-                                     0x3a000, 128);
+    device_context(model->device);
+    fn[0]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 0);
+    fn[1]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 1);
+    fn[2]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 2);
+    fn[3]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 3);
+    fn[4]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 4);	
+    ret = bios_load_linear_combined2(fn[0], fn[1], fn[2], fn[3], fn[4], 0x3a000, 128);
+    device_context_restore();
 
     if (bios_only || !ret)
         return ret;

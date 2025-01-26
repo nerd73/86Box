@@ -55,7 +55,12 @@ machine_at_premiere_common_init(const machine_t *model, int pci_switch)
     pci_register_slot(0x0C, PCI_CARD_NORMAL,      1, 3, 2, 4);
     pci_register_slot(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0);
     device_add(&keyboard_ps2_intel_ami_pci_device);
-    device_add(&sio_zb_device);
+		
+    if (pci_switch & PCI_NO_IRQ_STEERING)
+        device_add(&sio_device);
+    else
+        device_add(&sio_zb_device);
+
     device_add(&fdc37c665_device);
     device_add(&intel_flash_bxt_ami_device);
 }
@@ -205,25 +210,6 @@ machine_at_opti560l_init(const machine_t *model)
 }
 
 int
-machine_at_ambradp60_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear_combined("roms/machines/ambradp60/1004AF1P.BIO",
-                                    "roms/machines/ambradp60/1004AF1P.BI1",
-                                    0x1c000, 128);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_premiere_common_init(model, 0);
-
-    device_add(&i430lx_device);
-
-    return ret;
-}
-
-int
 machine_at_valuepointp60_init(const machine_t *model)
 {
     int ret;
@@ -258,15 +244,112 @@ machine_at_valuepointp60_init(const machine_t *model)
 
     return ret;
 }
+static const device_config_t batman_config[] = {
+    // clang-format off
+    {
+        .name = "bios",
+        .description = "BIOS Version",
+        .type = CONFIG_BIOS,
+        .default_string = "ambra_10004af1",
+        .default_int = 0,
+        .file_filter = "",
+        .spinner = { 0 },
+        .bios = {
+            { .name = "Ambra (1.00.04.AF1P)", .internal_name = "ambra_10004af1", .bios_type = BIOS_NORMAL, 
+              .files_no = 2, .local = 0, .size = 131072, .files = { "roms/machines/ambradp60/1004AF1P.BIO", "roms/machines/ambradp60/1004AF1P.BI1", "" } },						  
+            { .files_no = 0 }
+        },
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+static const device_config_t revenge_config[] = {
+    // clang-format off
+    {
+        .name = "bios",
+        .description = "BIOS Version",
+        .type = CONFIG_BIOS,
+        .default_string = "intel_10013af2",
+        .default_int = 0,
+        .file_filter = "",
+        .spinner = { 0 },
+        .bios = {
+            { .name = "Intel (1.00.13.AF2)", .internal_name = "intel_10013af2", .bios_type = BIOS_NORMAL, 
+              .files_no = 2, .local = 0, .size = 131072, .files = { "roms/machines/revenge/1013af2_.bio", "roms/machines/revenge/1013af2_.bi1", "" } },						  
+            { .files_no = 0 }
+        },
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+const device_t batman_device = {
+    .name          = "Intel Premiere/PCI (Batman) Devices",
+    .internal_name = "batman_device",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = batman_config
+};
+const device_t revenge_device = {
+    .name          = "Intel Premiere/PCI (Batman's Revenge) Devices",
+    .internal_name = "revenge_device",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = revenge_config
+};
+
+int
+machine_at_batman_init(const machine_t *model)
+{
+    int         ret = 0;
+    const char *fn[2];
+
+    /* No ROMs available. */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn[0]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 0);
+    fn[1]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 1);
+    ret          = bios_load_linear_combined(fn[0], fn[1], 0x1c000, 128);
+    device_context_restore();
+
+    if (bios_only || !ret)
+        return ret;
+	
+    machine_at_premiere_common_init(model, PCI_NO_IRQ_STEERING);
+
+    device_add(&i430lx_device);
+
+    return ret;
+}
 
 int
 machine_at_revenge_init(const machine_t *model)
 {
-    int ret;
+    int         ret = 0;
+    const char *fn[2];
 
-    ret = bios_load_linear_combined("roms/machines/revenge/1013af2_.bio",
-                                    "roms/machines/revenge/1013af2_.bi1",
-                                    0x1c000, 128);
+    /* No ROMs available. */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn[0]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 0);
+    fn[1]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 1);
+    ret          = bios_load_linear_combined(fn[0], fn[1], 0x1c000, 128);
+    device_context_restore();
 
     if (bios_only || !ret)
         return ret;

@@ -553,9 +553,60 @@ machine_at_opti495_init(const machine_t *model)
     return ret;
 }
 
-static void
-machine_at_opti495_ami_common_init(const machine_t *model)
+static const device_config_t sx495_config[] = {
+    // clang-format off
+    {
+        .name = "bios",
+        .description = "BIOS Version",
+        .type = CONFIG_BIOS,
+        .default_string = "amibios",
+        .default_int = 0,
+        .file_filter = "",
+        .spinner = { 0 },
+        .bios = {
+            { .name = "AMI", .internal_name = "amibios", .bios_type = BIOS_NORMAL, 
+              .files_no = 1, .local = 0, .size = 65536, .files = { "roms/machines/ami495/opt495sx.ami", "" } },			
+            { .name = "MR", .internal_name = "mrbios", .bios_type = BIOS_NORMAL,
+              .files_no = 1, .local = 0, .size = 65536, .files = { "roms/machines/mr495/opt495sx.mr", "" } },			  
+            { .files_no = 0 }
+        },
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+
+const device_t sx495_device = {
+    .name          = "Dataexpert SX495 Devices",
+    .internal_name = "sx495_device",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = sx495_config
+};
+
+int
+machine_at_opti495_ami_init(const machine_t *model)
 {
+    int ret = 0;
+    const char* fn;
+
+    /* No ROMs available */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn = device_get_bios_file(model->device, device_get_config_bios("bios"), 0);
+    ret = bios_load_linear(fn, 0x000f0000, 65536, 0);
+    device_context_restore();
+    
+    if (bios_only || !ret)
+        return ret;
+	
     machine_at_common_init(model);
 
     device_add(&opti495_device);
@@ -564,38 +615,6 @@ machine_at_opti495_ami_common_init(const machine_t *model)
 
     if (fdc_current[0] == FDC_INTERNAL)
         device_add(&fdc_at_device);
-}
-
-int
-machine_at_opti495_ami_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/ami495/opt495sx.ami",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_opti495_ami_common_init(model);
-
-    return ret;
-}
-
-int
-machine_at_opti495_mr_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/mr495/opt495sx.mr",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_opti495_ami_common_init(model);
-
-    return ret;
 }
 
 int
@@ -619,68 +638,85 @@ machine_at_exp4349_init(const machine_t *model)
     return ret;
 }
 
-static void
-machine_at_403tg_common_init(const machine_t *model, int nvr_hack)
+static const device_config_t j403tg_config[] = {
+    // clang-format off
+    {
+        .name = "bios",
+        .description = "BIOS Version",
+        .type = CONFIG_BIOS,
+        .default_string = "awardbios",
+        .default_int = 0,
+        .file_filter = "",
+        .spinner = { 0 },
+        .bios = {
+            { .name = "AMI v1.1 (06/30/94)", .internal_name = "amibios", .bios_type = BIOS_NORMAL, 
+              .files_no = 1, .local = 0, .size = 65536, .files = { "roms/machines/403tg_d/J403TGRevD.BIN", "" } },			
+            { .name = "Award v1.A (07/21/94)", .internal_name = "awardbios", .bios_type = BIOS_NORMAL,
+              .files_no = 1, .local = 0, .size = 65536, .files = { "roms/machines/403tg/403TG.BIN", "" } },	
+            { .name = "MR BIOS (11/29/94)", .internal_name = "mrbios", .bios_type = BIOS_NORMAL,
+              .files_no = 1, .local = 0, .size = 65536, .files = { "roms/machines/403tg_d/MRBiosOPT895.bin", "" } },				  
+            { .files_no = 0 }
+        },
+    },
+    {
+        .name = "ami_nvr", /*Not the most elegant solution, but it'll work for now.*/
+        .description = "AMI NVRAM",
+        .type = CONFIG_BINARY,
+        .default_int = 0
+    },	
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+
+const device_t j403tg_device = {
+    .name          = "Jetway J-403TG Devices",
+    .internal_name = "j403tg_device",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = j403tg_config
+};
+
+int
+machine_at_j403tg_init(const machine_t *model)
 {
+    int ret = 0;
+    const char* fn;
+    uint8_t nvr_hack;
+
+    /* No ROMs available */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn = device_get_bios_file(model->device, device_get_config_bios("bios"), 0);
+    ret = bios_load_linear(fn, 0x000f0000, 65536, 0);
+    nvr_hack  = machine_get_config_int("ami_nvr");	
+
+    device_context_restore();
+
+    if (bios_only || !ret)
+        return ret;
+
     if (nvr_hack) {
         machine_at_common_init_ex(model, 2);
         device_add(&ami_1994_nvr_device);
-    } else
-        machine_at_common_init(model);
-
+    } 
+	else
+    machine_at_common_init(model);
+	
     device_add(&opti895_device);
 
     device_add(&keyboard_at_ami_device);
 
     if (fdc_current[0] == FDC_INTERNAL)
         device_add(&fdc_at_device);
-}
-
-int
-machine_at_403tg_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/403tg/403TG.BIN",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_403tg_common_init(model, 0);
-
-    return ret;
-}
-
-int
-machine_at_403tg_d_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/403tg_d/J403TGRevD.BIN",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_403tg_common_init(model, 1);
-
-    return ret;
-}
-
-int
-machine_at_403tg_d_mr_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/403tg_d/MRBiosOPT895.bin",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_403tg_common_init(model, 0);
-
+	
     return ret;
 }
 
@@ -696,18 +732,34 @@ static const device_config_t pb450_config[] = {
         .spinner = { 0 },
         .bios = {
             { .name = "PCI 1.0A", .internal_name = "pci10a", .bios_type = BIOS_NORMAL, 
-              .files_no = 1, .local = 0, .size = 131072, .files = { "roms/machines/pb450/OPTI802.bin", "" } },
-            { .name = "PNP 1.1A", .internal_name = "pnp11a", .bios_type = BIOS_NORMAL,
-              .files_no = 1, .local = 0, .size = 131072, .files = { "roms/machines/pb450/PNP11A.bin", "" } },
+              .files_no = 1, .local = 0, .size = 131072, .files = { "roms/machines/pb450/OPTI802.bin", "" } },						  
             { .files_no = 0 }
         },
     },
     { .name = "", .description = "", .type = CONFIG_END }
     // clang-format on
 };
-
+static const device_config_t pb450_isa_config[] = {
+    // clang-format off
+    {
+        .name = "bios",
+        .description = "BIOS Version",
+        .type = CONFIG_BIOS,
+        .default_string = "pnp11a",
+        .default_int = 0,
+        .file_filter = "",
+        .spinner = { 0 },
+        .bios = {
+            { .name = "PNP 1.1A", .internal_name = "pnp11a", .bios_type = BIOS_NORMAL,
+              .files_no = 1, .local = 0, .size = 131072, .files = { "roms/machines/pb450/PNP11A.bin", "" } },			
+            { .files_no = 0 }
+        },
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
 const device_t pb450_device = {
-    .name          = "Packard Bell PB450 Devices",
+    .name          = "Packard Bell PB450 (PCI riser) Devices",
     .internal_name = "pb450_device",
     .flags         = 0,
     .local         = 0,
@@ -720,8 +772,40 @@ const device_t pb450_device = {
     .config        = pb450_config
 };
 
+const device_t pb450_isa_device = {
+    .name          = "Packard Bell PB450 (ISA riser) Devices",
+    .internal_name = "pb450_isa_device",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = pb450_isa_config
+};
+
+static void
+machine_at_pb450_common_init(const machine_t *model)
+{
+    machine_at_common_init_ex(model, 2);
+
+    if (gfxcard[0] == VID_INTERNAL)
+        device_add(machine_get_vid_device(machine));
+
+    device_add(&opti895_device);
+    device_add(&opti602_device);
+    device_add(&keyboard_ps2_phoenix_device);
+    device_add(&fdc37c665_ide_device);
+    device_add(&ide_opti611_vlb_sec_device);
+    device_add(&intel_flash_bxt_device);
+    device_add(&phoenix_486_jumper_pci_device);
+	
+}
+
 int
-machine_at_pb450_init(const machine_t *model)
+machine_at_pb450_pci_init(const machine_t *model)
 {
     int ret = 0;
     const char* fn;
@@ -738,29 +822,40 @@ machine_at_pb450_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
-    device_add(&ide_vlb_2ch_device);
-
+    machine_at_pb450_common_init(model);
+	
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
     pci_register_slot(0x11, PCI_CARD_NORMAL,      1, 2, 3, 4);
     pci_register_slot(0x12, PCI_CARD_NORMAL,      5, 6, 7, 8);
-
-    if (gfxcard[0] == VID_INTERNAL)
-        device_add(machine_get_vid_device(machine));
-
-    device_add(&opti895_device);
-    device_add(&opti602_device);
     device_add(&opti822_device);
-    device_add(&keyboard_ps2_phoenix_device);
-    device_add(&fdc37c665_ide_device);
-    device_add(&ide_opti611_vlb_sec_device);
-    device_add(&intel_flash_bxt_device);
-    device_add(&phoenix_486_jumper_pci_device);
+
 
     return ret;
 }
 
+int
+machine_at_pb450_isa_init(const machine_t *model)
+{
+    int ret = 0;
+    const char* fn;
+
+    /* No ROMs available */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn = device_get_bios_file(model->device, device_get_config_bios("bios"), 0);
+    ret = bios_load_linear(fn, 0x000e0000, 131072, 0);
+    device_context_restore();
+    
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_pb450_common_init(model);
+
+    return ret;
+}
 static void
 machine_at_pc330_6573_common_init(const machine_t *model)
 {

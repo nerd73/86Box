@@ -39,19 +39,62 @@
 #include <86box/sio.h>
 #include <86box/video.h>
 #include <86box/machine.h>
+static const device_config_t plato_config[] = {
+    // clang-format off
+    {
+        .name = "bios",
+        .description = "BIOS Version",
+        .type = CONFIG_BIOS,
+        .default_string = "intel_10016ax1",
+        .default_int = 0,
+        .file_filter = "",
+        .spinner = { 0 },
+        .bios = {
+            { .name = "Ambra (1.00.02.AX1P)", .internal_name = "ambra_10002ax1p", .bios_type = BIOS_NORMAL, 
+              .files_no = 2, .local = 0, .size = 131072, .files = { "roms/machines/ambradp90/1002AX1P.BIO", "roms/machines/ambradp90/1002AX1P.BI1", "" } },
+            { .name = "Dell (1.00.16.AX1J)", .internal_name = "dell_10016ax1j", .bios_type = BIOS_NORMAL, 
+              .files_no = 2, .local = 0, .size = 131072, .files = { "roms/machines/dellplato/1016AX1J.BIO", "roms/machines/dellplato/1016AX1J.BI1", "" } },	  			  
+            { .name = "Intel (1.00.16.AX1)", .internal_name = "intel_10016ax1", .bios_type = BIOS_NORMAL, 
+              .files_no = 2, .local = 0, .size = 131072, .files = { "roms/machines/plato/1016ax1_.bio", "roms/machines/plato/1016ax1_.bi1", "" } },
+            { .files_no = 0 }
+        },
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+const device_t plato_device = {
+    .name          = "Intel Premiere/PCI Devices",
+    .internal_name = "plato_device",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = plato_config
+};
 
 int
 machine_at_plato_init(const machine_t *model)
 {
-    int ret;
+    int         ret = 0;
+    const char *fn[2];
 
-    ret = bios_load_linear_combined("roms/machines/plato/1016ax1_.bio",
-                                    "roms/machines/plato/1016ax1_.bi1",
-                                    0x1d000, 128);
+    /* No ROMs available. */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn[0]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 0);
+    fn[1]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 1);
+    ret          = bios_load_linear_combined(fn[0], fn[1], 0x1d000, 128);
+    device_context_restore();
 
     if (bios_only || !ret)
         return ret;
-
+	
     machine_at_premiere_common_init(model, PCI_CAN_SWITCH_TYPE);
 
     device_add(&i430nx_device);
@@ -59,43 +102,6 @@ machine_at_plato_init(const machine_t *model)
     return ret;
 }
 
-int
-machine_at_dellplato_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear_combined("roms/machines/dellplato/1016AX1J.BIO",
-                                    "roms/machines/dellplato/1016AX1J.BI1",
-                                    0x1d000, 128);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_premiere_common_init(model, PCI_CAN_SWITCH_TYPE);
-
-    device_add(&i430nx_device);
-
-    return ret;
-}
-
-int
-machine_at_ambradp90_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear_combined("roms/machines/ambradp90/1002AX1P.BIO",
-                                    "roms/machines/ambradp90/1002AX1P.BI1",
-                                    0x1d000, 128);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_premiere_common_init(model, PCI_CAN_SWITCH_TYPE);
-
-    device_add(&i430nx_device);
-
-    return ret;
-}
 
 int
 machine_at_p54np4_init(const machine_t *model)

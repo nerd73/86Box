@@ -201,22 +201,64 @@ machine_at_tc430hx_gpio_init(void)
 
     machine_set_gpio_default(gpio);
 }
-
+static const device_config_t tc430hx_config[] = {
+    // clang-format off
+    {
+        .name = "bios",
+        .description = "BIOS Version",
+        .type = CONFIG_BIOS,
+        .default_string = "intel_10007dh0",
+        .default_int = 0,
+        .file_filter = "",
+        .spinner = { 0 },
+        .bios = {			  
+            { .name = "Intel (1.00.07.DH0)", .internal_name = "intel_10007dh0", .bios_type = BIOS_NORMAL, 
+              .files_no = 5, .local = 0, .size = 262144, .files = { "roms/machines/tc430hx/1007DH0_.BIO", "roms/machines/tc430hx/1007DH0_.BI1", 
+			  "roms/machines/tc430hx/1007DH0_.BI2", "roms/machines/tc430hx/1007DH0_.BI3", "roms/machines/tc430hx/1007DH0_.RCV", "" } },
+            { .name = "Toshiba (1.00.08.DH08)", .internal_name = "toshiba_10008dh0", .bios_type = BIOS_NORMAL, 
+              .files_no = 5, .local = 0, .size = 262144, .files = { "roms/machines/infinia7200/1008DH08.BIO", "roms/machines/infinia7200/1008DH08.BI1", 
+			  "roms/machines/infinia7200/1008DH08.BI2", "roms/machines/infinia7200/1008DH08.BI3", "roms/machines/infinia7200/1008DH08.RCV", "" } },			  
+            { .files_no = 0 }
+        },
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+const device_t tc430hx_device = {
+    .name          = "Intel TC430HX Devices",
+    .internal_name = "tc430hx_device",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = tc430hx_config
+};
 int
 machine_at_tc430hx_init(const machine_t *model)
 {
-    int ret;
+    int         ret = 0;
+    const char *fn[5];
 
-    ret = bios_load_linear_combined2("roms/machines/tc430hx/1007DH0_.BIO",
-                                     "roms/machines/tc430hx/1007DH0_.BI1",
-                                     "roms/machines/tc430hx/1007DH0_.BI2",
-                                     "roms/machines/tc430hx/1007DH0_.BI3",
-                                     "roms/machines/tc430hx/1007DH0_.RCV",
-                                     0x3a000, 128);
+    /* No ROMs available. */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn[0]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 0);
+    fn[1]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 1);
+    fn[2]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 2);
+    fn[3]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 3);
+    fn[4]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 4);	
+    ret = bios_load_linear_combined2(fn[0], fn[1], fn[2], fn[3], fn[4], 0x3a000, 128);
+    device_context_restore();
 
     if (bios_only || !ret)
         return ret;
-
+	
     machine_at_common_init_ex(model, 2);
     machine_at_tc430hx_gpio_init();
 
@@ -227,45 +269,6 @@ machine_at_tc430hx_init(const machine_t *model)
     pci_register_slot(0x0E, PCI_CARD_NORMAL,      2, 3, 4, 1);
     pci_register_slot(0x0F, PCI_CARD_NORMAL,      3, 4, 1, 2);
     pci_register_slot(0x10, PCI_CARD_NORMAL,      4, 1, 2, 3);
-    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0);
-
-    if (gfxcard[0] == VID_INTERNAL)
-        device_add(machine_get_vid_device(machine));
-
-    device_add(&i430hx_device);
-    device_add(&piix3_device);
-    device_add(&keyboard_ps2_ami_pci_device);
-    device_add(&pc87306_device);
-    device_add(&intel_flash_bxt_ami_device);
-
-    return ret;
-}
-
-int
-machine_at_infinia7200_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear_combined2("roms/machines/infinia7200/1008DH08.BIO",
-                                     "roms/machines/infinia7200/1008DH08.BI1",
-                                     "roms/machines/infinia7200/1008DH08.BI2",
-                                     "roms/machines/infinia7200/1008DH08.BI3",
-                                     "roms/machines/infinia7200/1008DH08.RCV",
-                                     0x3a000, 128);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_common_init_ex(model, 2);
-    machine_at_tc430hx_gpio_init();
-
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0);
-    pci_register_slot(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4);
-    pci_register_slot(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1);
-    pci_register_slot(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2);
-    pci_register_slot(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3);
     pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0);
 
     if (gfxcard[0] == VID_INTERNAL)
@@ -310,10 +313,65 @@ machine_at_cu430hx_gpio_init(void)
 
     machine_set_gpio_default(gpio);
 }
+static const device_config_t cu430hx_config[] = {
+    // clang-format off
+    {
+        .name = "bios",
+        .description = "BIOS Version",
+        .type = CONFIG_BIOS,
+        .default_string = "intel_10006dk0",
+        .default_int = 0,
+        .file_filter = "",
+        .spinner = { 0 },
+        .bios = {			  
+            { .name = "Intel (1.00.06.DK0)", .internal_name = "intel_10006dk0", .bios_type = BIOS_NORMAL, 
+              .files_no = 5, .local = 0, .size = 262144, .files = { "roms/machines/tc430hx/1006DK0_.BIO", "roms/machines/tc430hx/1006DK0_.BI1", 
+			  "roms/machines/tc430hx/1006DK0_.BI2", "roms/machines/tc430hx/1006DK0_.BI3", "roms/machines/tc430hx/1006DK0_.RCV", "" } },
+            { .name = "Toshiba (1.00.08.DH08)", .internal_name = "toshiba_10008dh0", .bios_type = BIOS_NORMAL, 
+              .files_no = 5, .local = 0, .size = 262144, .files = { "roms/machines/equium5200/1003DK08.BIO", "roms/machines/equium5200/1003DK08.BI1", 
+			  "roms/machines/equium5200/1003DK08.BI2", "roms/machines/equium5200/1003DK08.BI3", "roms/machines/equium5200/1003DK08.RCV", "" } },			  
+            { .files_no = 0 }
+        },
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+const device_t cu430hx_device = {
+    .name          = "Intel CU430HX Devices",
+    .internal_name = "cu430hx_device",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = cu430hx_config
+};
 
-static void
-machine_at_cu430hx_common_init(const machine_t *model)
+int
+machine_at_cu430hx_init(const machine_t *model)
 {
+    int         ret = 0;
+    const char *fn[5];
+
+    /* No ROMs available. */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn[0]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 0);
+    fn[1]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 1);
+    fn[2]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 2);
+    fn[3]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 3);
+    fn[4]        = device_get_bios_file(model->device, device_get_config_bios("bios"), 4);	
+    ret = bios_load_linear_combined2(fn[0], fn[1], fn[2], fn[3], fn[4], 0x3a000, 128);
+    device_context_restore();
+
+    if (bios_only || !ret)
+        return ret;
+
     machine_at_common_init_ex(model, 2);
     machine_at_cu430hx_gpio_init();
 
@@ -335,44 +393,6 @@ machine_at_cu430hx_common_init(const machine_t *model)
     device_add(&keyboard_ps2_ami_pci_device);
     device_add(&pc87306_device);
     device_add(&intel_flash_bxt_ami_device);
-}
-
-int
-machine_at_cu430hx_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear_combined2("roms/machines/cu430hx/1006DK0_.BIO",
-                                     "roms/machines/cu430hx/1006DK0_.BI1",
-                                     "roms/machines/cu430hx/1006DK0_.BI2",
-                                     "roms/machines/cu430hx/1006DK0_.BI3",
-                                     "roms/machines/cu430hx/1006DK0_.RCV",
-                                     0x3a000, 128);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_cu430hx_common_init(model);
-
-    return ret;
-}
-
-int
-machine_at_equium5200_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear_combined2("roms/machines/equium5200/1003DK08.BIO",
-                                     "roms/machines/equium5200/1003DK08.BI1",
-                                     "roms/machines/equium5200/1003DK08.BI2",
-                                     "roms/machines/equium5200/1003DK08.BI3",
-                                     "roms/machines/equium5200/1003DK08.RCV",
-                                     0x3a000, 128);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_cu430hx_common_init(model);
 
     return ret;
 }

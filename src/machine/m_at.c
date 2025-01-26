@@ -173,6 +173,15 @@ static const device_config_t ibmat_config[] = {
 
             { .name = "618102x (01/10/84)", .internal_name = "ibm5170_011084", .bios_type = BIOS_NORMAL,
               .files_no = 2, .local = 0, .size = 65536, .files = { "roms/machines/ibmat/BIOS_5170_10JAN84_U27.BIN", "roms/machines/ibmat/BIOS_5170_10JAN84_U47.BIN", "" } },
+
+            { .name = "AMI (04/30/89)", .internal_name = "ami_043089", .bios_type = BIOS_NORMAL,
+              .files_no = 2, .local = 0, .size = 65536, .files = { "roms/machines/ibmatami/BIOS_5170_30APR89_U27_AMI_27256.BIN", "roms/machines/ibmatami/BIOS_5170_30APR89_U47_AMI_27256.BIN", "" } },
+			  
+            { .name = "Phoenix (09/03/92)", .internal_name = "px_090392", .bios_type = BIOS_NORMAL,
+              .files_no = 2, .local = 0, .size = 65536, .files = { "roms/machines/ibmatpx/BIOS ROM - PhoenixBIOS A286 - Version 1.01 - Even.bin", "roms/machines/ibmatpx/BIOS ROM - PhoenixBIOS A286 - Version 1.01 - Odd.bin", "" } },
+			  
+            { .name = "Quadtel (03/30/90)", .internal_name = "quadtel_033090", .bios_type = BIOS_NORMAL,
+              .files_no = 2, .local = 0, .size = 65536, .files = { "roms/machines/ibmatquadtel/BIOS_30MAR90_U27_QUADTEL_ENH_286_BIOS_3.05.01_27256.BIN", "roms/machines/ibmatquadtel/BIOS_30MAR90_U47_QUADTEL_ENH_286_BIOS_3.05.01_27256.BIN", "" } },			  
             { .files_no = 0 }
         },
     },

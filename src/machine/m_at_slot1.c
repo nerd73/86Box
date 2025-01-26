@@ -743,10 +743,59 @@ machine_at_vei8_init(const machine_t *model)
 
     return ret;
 }
+static const device_config_t ms6168_config[] = {
+    // clang-format off
+    {
+        .name = "bios",
+        .description = "BIOS Version",
+        .type = CONFIG_BIOS,
+        .default_string = "asus_1997",
+        .default_int = 0,
+        .file_filter = "",
+        .spinner = { 0 },
+        .bios = {
+            { .name = "Award (11/17/00)", .internal_name = "msiaward", .bios_type = BIOS_NORMAL, 
+              .files_no = 1, .local = 0, .size = 262144, .files = { "roms/machines/ms6168/w6168ims.130", "" } },
+            { .name = "Packard Bell Bora Pro", .internal_name = "pbborapro", .bios_type = BIOS_NORMAL, 
+              .files_no = 1, .local = 0, .size = 262144, .files = { "roms/machines/borapro/MS6168V2.50", "" } },			  
+            { .files_no = 0 }
+        },
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+const device_t ms6168_device = {
+    .name          = "MSI MS-6168 Devices",
+    .internal_name = "ms6168_device",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = ms6168_config
+};
 
-static void
-machine_at_ms6168_common_init(const machine_t *model)
+int
+machine_at_ms6168_init(const machine_t *model)
 {
+    int ret = 0;
+    const char* fn;
+
+    /* No ROMs available */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn = device_get_bios_file(model->device, device_get_config_bios("bios"), 0);
+    ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
+    device_context_restore();
+    
+    if (bios_only || !ret)
+        return ret;
+
     machine_at_common_init_ex(model, 2);
 
     pci_init(PCI_CONFIG_TYPE_1);
@@ -772,36 +821,6 @@ machine_at_ms6168_common_init(const machine_t *model)
         device_add(machine_get_snd_device(machine));
         device_add(&cs4297_device);
     }
-}
-
-int
-machine_at_borapro_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/borapro/MS6168V2.50",
-                           0x000c0000, 262144, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_ms6168_common_init(model);
-
-    return ret;
-}
-
-int
-machine_at_ms6168_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/ms6168/w6168ims.130",
-                           0x000c0000, 262144, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_ms6168_common_init(model);
 
     return ret;
 }
